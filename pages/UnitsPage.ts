@@ -78,6 +78,7 @@ export class UnitsPage {
   }
 
   async priceListNames(): Promise<string[]> {
+    await this.closeMenuIfOpen();
     await this.priceListButton.click();
     const menu = this.page.locator('[role="menu"]');
     await expect(menu).toBeVisible();
@@ -89,16 +90,29 @@ export class UnitsPage {
     return names;
   }
 
-  /** Cierra el menú desplegable de listas si quedó abierto (Escape y, si no alcanza, click en el backdrop). */
+  /**
+   * Cierra cualquier menú de MUI que haya quedado abierto (selector de listas o "Templates").
+   * Aunque el menú no se vea, su backdrop invisible intercepta los clicks del resto de la página.
+   */
   private async closeMenuIfOpen() {
-    const menu = this.page.locator('[role="menu"]');
-    if (await menu.isVisible()) await this.page.keyboard.press('Escape');
-    if (await menu.isVisible())
-      await this.page.locator('.MuiPopover-root .MuiBackdrop-root').first().click({ force: true });
-    await expect(menu).toBeHidden();
+    const menus = this.page.locator('.MuiMenu-root');
+    for (let i = 0; i < 3 && (await menus.count()) > 0; i++) {
+      await this.page.keyboard.press('Escape');
+      await this.page.waitForTimeout(300);
+      if ((await menus.count()) > 0) {
+        await menus
+          .locator('.MuiBackdrop-root')
+          .first()
+          .click({ force: true, timeout: 2000 })
+          .catch(() => {});
+        await this.page.waitForTimeout(300);
+      }
+    }
+    await expect(menus).toHaveCount(0);
   }
 
   async selectPriceList(name: string) {
+    await this.closeMenuIfOpen();
     if ((await this.selectedPriceList()) !== name) {
       await this.priceListButton.click();
       await this.page.locator('[role="menu"]').getByText(name, { exact: true }).click();
@@ -134,6 +148,7 @@ export class UnitsPage {
 
   /** Alta manual: "Adicionar unidad" agrega una fila y abre el editor de la celda Unidad. */
   async addUnit(name: string) {
+    await this.closeMenuIfOpen();
     await this.addUnitButton.click();
     await expect(this.cellEditor).toBeVisible();
     await this.cellEditor.fill(name);
@@ -144,6 +159,7 @@ export class UnitsPage {
 
   /** Edición inline del precio de una unidad en la lista seleccionada. */
   async setUnitPrice(unit: string, price: number) {
+    await this.closeMenuIfOpen();
     const cell = this.row(unit).locator('td[data-column-id="precio"]');
     await cell.scrollIntoViewIfNeeded();
     await cell.click();
@@ -155,6 +171,7 @@ export class UnitsPage {
 
   /** Tacho rojo: quita la unidad de la lista seleccionada. Devuelve el texto del diálogo de confirmación. */
   async removeUnitFromList(unit: string) {
+    await this.closeMenuIfOpen();
     const trash = this.row(unit).locator('td[data-column-id="menu"] button');
     await trash.click();
     const dialog = this.page.getByRole('dialog').filter({ hasText: 'Eliminar unidad' });
@@ -168,6 +185,7 @@ export class UnitsPage {
 
   /** Abre el diálogo de borrado y lo cierra con la "X" (sin confirmar). */
   async cancelRemoveUnit(unit: string) {
+    await this.closeMenuIfOpen();
     await this.row(unit).locator('td[data-column-id="menu"] button').click();
     const dialog = this.page.getByRole('dialog').filter({ hasText: 'Eliminar unidad' });
     await expect(dialog).toBeVisible();
@@ -177,6 +195,7 @@ export class UnitsPage {
 
   /** Abre el editor de precio, escribe un valor y cancela con Escape. */
   async cancelPriceEdit(unit: string, value: number) {
+    await this.closeMenuIfOpen();
     const cell = this.row(unit).locator('td[data-column-id="precio"]');
     await cell.scrollIntoViewIfNeeded();
     await cell.click();
@@ -195,6 +214,7 @@ export class UnitsPage {
   }
 
   async openUploadDialog() {
+    await this.closeMenuIfOpen();
     await this.templatesButton.click();
     await this.page.getByRole('button', { name: 'Cargar Template de Unidades', exact: true }).click();
     await expect(this.uploadDialog).toBeVisible();
@@ -203,6 +223,7 @@ export class UnitsPage {
 
   /** "Templates > Descargar Template de Unidades": devuelve la ruta del .xlsx descargado. */
   async downloadTemplate(targetDir: string) {
+    await this.closeMenuIfOpen();
     await this.templatesButton.click();
     const [download] = await Promise.all([
       this.page.waitForEvent('download'),
