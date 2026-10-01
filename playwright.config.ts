@@ -6,6 +6,11 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 export const STORAGE_STATE = path.join(__dirname, 'playwright/.auth/user.json');
 
+const authenticated = { storageState: STORAGE_STATE, viewport: { width: 1600, height: 900 } };
+
+/** BROWSERS=all agrega Firefox y WebKit (Safari) además de Chromium. */
+const crossBrowser = process.env.BROWSERS === 'all';
+
 export default defineConfig({
   testDir: './tests',
   timeout: 120_000,
@@ -15,7 +20,10 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   forbidOnly: !!process.env.CI,
-  reporter: [['list'], ['html', { open: 'never' }]],
+  // En GitHub Actions, el reporter "github" publica cada falla como anotación visible en el resumen del run.
+  reporter: process.env.CI
+    ? [['github'], ['list'], ['html', { open: 'never' }]]
+    : [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: process.env.BASE_URL ?? 'https://tst.lebane.app',
     locale: 'es-AR',
@@ -28,11 +36,18 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   projects: [
-    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+    { name: 'setup', testMatch: /.*\.setup\.ts/, teardown: 'cleanup' },
+    { name: 'cleanup', testMatch: /.*\.teardown\.ts/, use: authenticated },
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1600, height: 900 }, storageState: STORAGE_STATE },
+      use: { ...devices['Desktop Chrome'], ...authenticated },
       dependencies: ['setup'],
     },
+    ...(crossBrowser
+      ? [
+          { name: 'firefox', use: { ...devices['Desktop Firefox'], ...authenticated }, dependencies: ['setup'] },
+          { name: 'webkit', use: { ...devices['Desktop Safari'], ...authenticated }, dependencies: ['setup'] },
+        ]
+      : []),
   ],
 });

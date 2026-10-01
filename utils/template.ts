@@ -29,6 +29,26 @@ export const TEMPLATE_HEADERS = [
   'Valor alquiler',
 ] as const;
 
+/**
+ * Lee el "reporte de template" que devuelve Lebane tras una carga y retorna el estado de validación
+ * de cada fila (última columna "Estado", p. ej. "Datos correctos" o "Estado nulo"), indexado por número de unidad.
+ */
+export async function readTemplateReport(filePath: string): Promise<Record<string, string>> {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(filePath);
+  const ws = wb.getWorksheet('Unidades') ?? wb.worksheets[0];
+  const headers = (ws.getRow(1).values as unknown[]).map((v) => String(v ?? '').trim());
+  const statusCol = headers.lastIndexOf('Estado');
+  const numeroCol = headers.indexOf('Numero de unidad (*)');
+  const result: Record<string, string> = {};
+  ws.eachRow((row, i) => {
+    if (i === 1) return;
+    const numero = String(row.getCell(numeroCol).value ?? '').trim();
+    if (numero) result[numero] = String(row.getCell(statusCol).value ?? '').trim();
+  });
+  return result;
+}
+
 export interface TemplateUnit {
   numero: string;
   tipologia: string;
@@ -43,38 +63,50 @@ export interface TemplateUnit {
   piso: number;
 }
 
+export interface TemplateOptions {
+  fileName?: string;
+  /** Columnas a quitar del archivo (para casos negativos, p. ej. 'Precio (*)'). */
+  omitColumns?: string[];
+}
+
 /** Genera un .xlsx compatible con "Cargar Template de Unidades" y devuelve su ruta. */
-export async function buildUnitsTemplate(units: TemplateUnit[], fileName = `template_unidades_${Date.now()}.xlsx`) {
+export async function buildUnitsTemplate(units: TemplateUnit[], options: TemplateOptions | string = {}) {
+  const opts: TemplateOptions = typeof options === 'string' ? { fileName: options } : options;
+  const fileName = opts.fileName ?? `template_unidades_${Date.now()}.xlsx`;
+  const keep = TEMPLATE_HEADERS.map((h) => !(opts.omitColumns ?? []).includes(h));
+  const pick = <T>(row: T[]) => row.filter((_, i) => keep[i]);
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Unidades');
-  ws.addRow([...TEMPLATE_HEADERS]);
+  ws.addRow(pick([...TEMPLATE_HEADERS]));
   for (const u of units) {
     const total = u.m2Cubiertos + u.m2SemiCubiertos + u.m2Descubiertos + u.m2Comunes;
-    ws.addRow([
-      u.numero,
-      u.tipologia,
-      u.orientacion,
-      u.m2Cubiertos,
-      u.m2SemiCubiertos,
-      u.m2Descubiertos,
-      u.m2Comunes,
-      total,
-      u.precio,
-      u.moneda,
-      u.estado,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      u.piso,
-      'PROPIETARIO',
-      null,
-      null,
-    ]);
+    ws.addRow(
+      pick([
+        u.numero,
+        u.tipologia,
+        u.orientacion,
+        u.m2Cubiertos,
+        u.m2SemiCubiertos,
+        u.m2Descubiertos,
+        u.m2Comunes,
+        total,
+        u.precio,
+        u.moneda,
+        u.estado,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        u.piso,
+        'PROPIETARIO',
+        null,
+        null,
+      ]),
+    );
   }
   const dir = path.resolve(__dirname, '..', 'tmp');
   fs.mkdirSync(dir, { recursive: true });

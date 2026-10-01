@@ -5,7 +5,7 @@ import { defaultPriceListName, uniqueName } from '../utils/data';
  * Regla: "Al crear un nuevo proyecto, se debe crear una lista de precio inicial;
  * dicha lista de precios puede o no especificar el nombre de la lista de precios."
  */
-test.describe('Lista de precios inicial al crear un proyecto', () => {
+test.describe('Lista de precios inicial al crear un proyecto', { tag: '@smoke' }, () => {
   test('TC01 - con nombre de lista: se crea la lista inicial con el nombre indicado', async ({ page }) => {
     const listName = uniqueName('Lista QA');
     const { units, areaData } = await createProjectWithInitialPriceList(page, {}, { nombreListaPrecios: listName });

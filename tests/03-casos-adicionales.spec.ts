@@ -10,7 +10,7 @@ import { TEMPLATE_HEADERS, buildUnitsTemplate, sampleTemplateUnits } from '../ut
  * Casos complementarios: validaciones, cancelaciones (casos negativos),
  * descarga del template y aislamiento entre listas de precios.
  */
-test.describe('Validaciones del formulario de proyecto', () => {
+test.describe('Validaciones del formulario de proyecto', { tag: '@regression' }, () => {
   test('TC08 - "Registrar" permanece deshabilitado con campos obligatorios incompletos', async ({ page }) => {
     const form = new NewProjectPage(page);
     await form.openFromHome();
@@ -21,7 +21,7 @@ test.describe('Validaciones del formulario de proyecto', () => {
   });
 });
 
-test.describe.serial('Casos complementarios de lista de precios', () => {
+test.describe.serial('Casos complementarios de lista de precios', { tag: '@regression' }, () => {
   const initialList = uniqueName('Lista QA');
   const p = Date.now().toString().slice(-4);
   const tplUnits = sampleTemplateUnits(`C${p}`);
@@ -134,11 +134,11 @@ test.describe.serial('Casos complementarios de lista de precios', () => {
     test.info().annotations.push({
       type: 'bug',
       description:
-        'Observado en Testing (01/10/2026): si ya existe "Lista precios DD/MM/YYYY", un nuevo template ' +
+        'BUG-01: observado en Testing (01/10/2026): si ya existe "Lista precios DD/MM/YYYY", un nuevo template ' +
         'se fusiona en esa lista (actualiza precios y agrega unidades) en lugar de crear una lista nueva, ' +
         'contradiciendo la regla "Al cargar un template se crea una nueva lista de precios".',
     });
-    test.fail(true, 'Bug conocido: el segundo template del día no crea una nueva lista');
+    test.fail(true, 'Bug conocido BUG-01: el segundo template del día no crea una nueva lista');
 
     await unitsPage.goto(projectId);
     await unitsPage.openUnitsTab();

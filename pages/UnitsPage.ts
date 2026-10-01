@@ -234,16 +234,30 @@ export class UnitsPage {
     return { filePath, fileName: download.suggestedFilename() };
   }
 
-  async uploadTemplate(filePath: string) {
+  /**
+   * Carga un template de unidades. Si se indica `reportDir`, descarga el "reporte de template"
+   * (validación fila por fila que genera Lebane) y devuelve su ruta.
+   */
+  async uploadTemplate(filePath: string, opts: { reportDir?: string } = {}) {
     const dialog = await this.openUploadDialog();
     await this.page.locator('#upload-template').setInputFiles(filePath);
     await dialog.getByRole('button', { name: 'Cargar', exact: true }).click();
     await expectToast(this.page, 'Archivo subido exitosamente');
     const report = this.page.getByRole('dialog').filter({ hasText: 'Descarga de reporte de template' });
     await expect(report).toBeVisible();
+    let reportPath: string | undefined;
+    if (opts.reportDir) {
+      const [download] = await Promise.all([
+        this.page.waitForEvent('download'),
+        report.getByRole('button', { name: 'Descargar reporte' }).click(),
+      ]);
+      reportPath = `${opts.reportDir}/${download.suggestedFilename()}`;
+      await download.saveAs(reportPath);
+    }
     await report.getByRole('button', { name: 'Cerrar' }).click();
     await expect(report).toBeHidden();
     await this.waitForGrid();
+    return reportPath;
   }
 
   /** Verifica sobre todas las listas de precios si una unidad existe en alguna. */

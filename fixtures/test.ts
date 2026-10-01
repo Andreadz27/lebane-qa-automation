@@ -2,6 +2,7 @@ import { test as base, Page } from '@playwright/test';
 import { NewProjectPage } from '../pages/NewProjectPage';
 import { UnitsPage } from '../pages/UnitsPage';
 import { AreasData, ProjectData, areasData, newProjectData } from '../utils/data';
+import { registerCreatedProject } from '../utils/createdProjects';
 
 type Fixtures = {
   newProjectPage: NewProjectPage;
@@ -30,6 +31,7 @@ export async function createProjectWithInitialPriceList(
   await newProject.openFromHome();
   await newProject.fill(projectData);
   const projectId = await newProject.submit();
+  registerCreatedProject(projectId, projectData.nombre);
 
   const units = new UnitsPage(page);
   await units.goto(projectId);

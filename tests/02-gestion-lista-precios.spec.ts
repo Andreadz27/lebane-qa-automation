@@ -7,7 +7,7 @@ import { buildUnitsTemplate, sampleTemplateUnits } from '../utils/template';
  * unidades manuales, modificación de precio, carga de template y borrado de unidades.
  * Los casos dependen entre sí, por eso se ejecutan en modo serial.
  */
-test.describe.serial('Gestión de la lista de precios de unidades', () => {
+test.describe.serial('Gestión de la lista de precios de unidades', { tag: '@smoke' }, () => {
   const initialList = uniqueName('Lista QA');
   const manualUnit = `MAN-${Date.now().toString().slice(-5)}`;
   const tplUnits = sampleTemplateUnits(`T${Date.now().toString().slice(-4)}`);
