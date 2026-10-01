@@ -19,8 +19,12 @@ export class UnitsPage {
   get unitsTab() {
     return this.page.getByRole('tab', { name: 'Unidades', exact: true });
   }
+  /**
+   * Localizadores CSS (no por rol) para los botones de la barra: mientras un menú de MUI está abierto
+   * el resto de la página queda con aria-hidden y getByRole no los encuentra.
+   */
   get templatesButton() {
-    return this.page.getByRole('button', { name: 'Templates', exact: true });
+    return this.page.locator('main button').filter({ hasText: /^\s*Templates\s*$/ });
   }
   get addUnitButton() {
     return this.page.getByRole('button', { name: 'Adicionar unidad' });
@@ -75,21 +79,31 @@ export class UnitsPage {
 
   async priceListNames(): Promise<string[]> {
     await this.priceListButton.click();
-    const menu = this.page.getByRole('menu');
+    const menu = this.page.locator('[role="menu"]');
     await expect(menu).toBeVisible();
     const names = (await menu.innerText())
       .split('\n')
       .map((s) => s.trim())
       .filter(Boolean);
-    await this.page.keyboard.press('Escape');
-    await expect(menu).toBeHidden();
+    await this.closeMenuIfOpen();
     return names;
   }
 
+  /** Cierra el menú desplegable de listas si quedó abierto (Escape y, si no alcanza, click en el backdrop). */
+  private async closeMenuIfOpen() {
+    const menu = this.page.locator('[role="menu"]');
+    if (await menu.isVisible()) await this.page.keyboard.press('Escape');
+    if (await menu.isVisible())
+      await this.page.locator('.MuiPopover-root .MuiBackdrop-root').first().click({ force: true });
+    await expect(menu).toBeHidden();
+  }
+
   async selectPriceList(name: string) {
-    await this.priceListButton.click();
-    await this.page.getByRole('menu').getByText(name, { exact: true }).click();
-    await this.page.keyboard.press('Escape');
+    if ((await this.selectedPriceList()) !== name) {
+      await this.priceListButton.click();
+      await this.page.locator('[role="menu"]').getByText(name, { exact: true }).click();
+    }
+    await this.closeMenuIfOpen();
     await expect(this.priceListButton).toHaveText(name);
     await this.waitForGrid();
   }
