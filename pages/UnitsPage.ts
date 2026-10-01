@@ -181,8 +181,11 @@ export class UnitsPage {
     await cell.scrollIntoViewIfNeeded();
     await cell.click();
     await expect(this.cellEditor).toBeVisible();
-    await this.cellEditor.fill(String(value));
-    await this.cellEditor.press('Escape');
+    // Se tipea como un usuario (no fill) y se cancela con Escape desde el teclado.
+    await this.cellEditor.press('Control+A');
+    await this.cellEditor.pressSequentially(String(value), { delay: 30 });
+    await this.page.keyboard.press('Escape');
+    if (await this.cellEditor.isVisible()) await this.page.keyboard.press('Escape');
     await expect(this.cellEditor).toBeHidden();
   }
 
@@ -193,7 +196,7 @@ export class UnitsPage {
 
   async openUploadDialog() {
     await this.templatesButton.click();
-    await this.page.getByRole('button', { name: 'Cargar Template de Unidades' }).click();
+    await this.page.getByRole('button', { name: 'Cargar Template de Unidades', exact: true }).click();
     await expect(this.uploadDialog).toBeVisible();
     return this.uploadDialog;
   }
@@ -203,7 +206,7 @@ export class UnitsPage {
     await this.templatesButton.click();
     const [download] = await Promise.all([
       this.page.waitForEvent('download'),
-      this.page.getByRole('button', { name: 'Descargar Template de Unidades' }).click(),
+      this.page.getByRole('button', { name: 'Descargar Template de Unidades', exact: true }).click(),
     ]);
     const filePath = `${targetDir}/${download.suggestedFilename()}`;
     await download.saveAs(filePath);
