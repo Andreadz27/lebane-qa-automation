@@ -254,7 +254,9 @@ export class UnitsPage {
       reportPath = `${opts.reportDir}/${download.suggestedFilename()}`;
       await download.saveAs(reportPath);
     }
-    await report.getByRole('button', { name: 'Cerrar' }).click();
+    // "Descargar reporte" cierra el diálogo por sí mismo; "Cerrar" solo hace falta si sigue abierto.
+    if (reportPath) await report.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+    if (await report.isVisible()) await report.getByRole('button', { name: 'Cerrar' }).click();
     await expect(report).toBeHidden();
     await this.waitForGrid();
     return reportPath;
