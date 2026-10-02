@@ -3,7 +3,6 @@ import { defaultPriceListName, formatAR, uniqueName } from '../utils/data';
 import { buildUnitsTemplate, sampleTemplateUnits } from '../utils/template';
 
 /**
- * Happy path completo (Figuras 1 a 6) sobre un único proyecto:
  * unidades manuales, modificación de precio, carga de template y borrado de unidades.
  * Los casos dependen entre sí, por eso se ejecutan en modo serial.
  */
