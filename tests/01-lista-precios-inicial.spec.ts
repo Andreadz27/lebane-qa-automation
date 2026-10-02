@@ -2,8 +2,8 @@ import { test, expect, createProjectWithInitialPriceList } from '../fixtures/tes
 import { defaultPriceListName, uniqueName } from '../utils/data';
 
 /**
- * Regla: "Al crear un nuevo proyecto, se debe crear una lista de precio inicial;
- * dicha lista de precios puede o no especificar el nombre de la lista de precios."
+ * Regla: "Al crear el nuevo proyecto, se debe crear una lista de precio inicial;
+ * Esta lista de precios puede o no especificar el nombre de la lista de precios."
  */
 test.describe('Lista de precios inicial al crear un proyecto', { tag: '@smoke' }, () => {
   test('TC01 - con nombre de lista: se crea la lista inicial con el nombre indicado', async ({ page }) => {
