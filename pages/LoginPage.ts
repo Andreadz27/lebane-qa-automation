@@ -22,6 +22,18 @@ export class LoginPage {
     await this.email.fill(user);
     await this.password.fill(pass);
     await this.submit.click();
-    await this.page.waitForURL((url) => !url.pathname.startsWith('/sign-in'));
+    try {
+      await this.page.waitForURL((url) => !url.pathname.startsWith('/sign-in'), { timeout: 30_000 });
+    } catch {
+      // Si no se sale de /sign-in, se informa el mensaje que muestra la app (p. ej. credenciales inválidas).
+      const messages = await this.page
+        .locator('[role="alert"], .Toastify__toast, .MuiAlert-message, .Mui-error, .MuiFormHelperText-root')
+        .allInnerTexts();
+      const shown = messages.map((m) => m.trim()).filter(Boolean);
+      throw new Error(
+        `El login no se completó (sigue en /sign-in). Mensajes en pantalla: ${shown.length ? shown.join(' | ') : '(ninguno)'}. ` +
+          'Revisar LEBANE_USER / LEBANE_PASSWORD (en CI: secrets del repositorio).',
+      );
+    }
   }
 }

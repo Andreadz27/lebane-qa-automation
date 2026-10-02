@@ -37,7 +37,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'setup', testMatch: /.*\.setup\.ts/, teardown: 'cleanup' },
-    { name: 'cleanup', testMatch: /.*\.teardown\.ts/, use: authenticated },
+    { name: 'cleanup', testMatch: /.*\.teardown\.ts/ },
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], ...authenticated },
